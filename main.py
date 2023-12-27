@@ -46,7 +46,7 @@ def main(args):
         start_time = time.time()
 
         new_prompts = [
-            f"Always answer in one sentence. {pt}"
+            f"Input: These are captions of the frames in temporal order within the same video: {pt}. please summarize the whole video according to the frame captions in short. Always answer in a short and concise sentence. Output: "
             for pt in prompts
         ]
 
@@ -67,15 +67,17 @@ def main(args):
         outputs = tokenizer.batch_decode(
             output_ids_new, skip_special_tokens=True, spaces_between_special_tokens=False
         )
+        outputs = [op.strip() for op in outputs]
+        print(outputs)
         from IPython import embed
         embed()
 
     # Build the prompt with a conversation template
-    msg = args.message
-    conv = get_conversation_template(args.model_path)
-    conv.append_message(conv.roles[0], msg)
-    conv.append_message(conv.roles[1], None)
-    prompt = conv.get_prompt()
+    # msg = args.message
+    # conv = get_conversation_template(args.model_path)
+    # conv.append_message(conv.roles[0], msg)
+    # conv.append_message(conv.roles[1], None)
+    # prompt = conv.get_prompt()
 
     # Run inference
     # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
