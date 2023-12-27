@@ -13,7 +13,7 @@ import time
 
 from fastchat.model import load_model, add_model_args
 from dataset import CaptionDataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 
 def seconds_to_hms(t):
@@ -30,11 +30,24 @@ def main(args):
 
     # load dataset
     data_set = CaptionDataset(caption_path=args.caption_path)
-    data_loader = DataLoader(dataset=data_set,
+
+    total_len = len(data_set)
+    split_len = total_len // args.job_num
+    start_idx = args.job_id * split_len
+    end_idx = start_idx + split_len
+    if args.job_id == (args.job_num - 1):
+        end_idx = total_len
+    sub_data_set = Subset(data_set, range(start_idx, end_idx))
+
+    data_loader = DataLoader(dataset=sub_data_set,
                              batch_size=args.batch_size,
                              num_workers=8,
                              pin_memory=True,
                              shuffle=False)
+
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+    print(f'JOB: {args.job_id} start index: {start_idx}, end index: {end_idx}, split len: {len(sub_data_set)}')
+    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
 
     # Load model
     model, tokenizer = load_model(
@@ -78,8 +91,11 @@ def main(args):
         )
         outputs = [op.strip() for op in outputs]
 
-        from IPython import embed
-        embed()
+        # save
+        for fn, ret in zip(filenames, outputs):
+            result_dict[fn] = ret
+        if (cur_iter + 1) % args.save_freq == 0 or (cur_iter + 1) == total_iters:
+            torch.save(result_dict, os.path.join(args.output, f'result_job_{args.job_id}.pth'))
 
         if (cur_iter + 1) % args.print_freq == 0:
             batch_time = time.time() - start_time
