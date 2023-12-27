@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--message", type=str, default="Hello! Who are you?")
     # dataset
-    parser.add_argument("--caption_path", type=str)
+    parser.add_argument("--caption-path", type=str)
     parser.add_argument("--batch-size", type=int, default=8)
     # output
     parser.add_argument("--output", type=str, help="the path to the output dir")
