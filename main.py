@@ -49,6 +49,7 @@ def main(args):
     )
 
     # Inference
+    result_dict = {}
     total_iters = len(data_loader)
     for cur_iter, (filenames, prompts, captions, actions) in enumerate(data_loader):
         start_time = time.time()
@@ -77,12 +78,15 @@ def main(args):
         )
         outputs = [op.strip() for op in outputs]
 
+        from IPython import embed
+        embed()
+
         if (cur_iter + 1) % args.print_freq == 0:
             batch_time = time.time() - start_time
             time_to_end = batch_time * (total_iters - cur_iter - 1)
             print(
-                f'prompt: {new_prompts}\n'
-                f'outputs: {outputs}'
+                f'Prompt: {new_prompts[0]}\n'
+                f'Outputs: {outputs[0]}'
             )
             print(
                 f'Job: [{args.job_id} / {args.job_num}] Iter: {cur_iter + 1} / {total_iters} ({(cur_iter + 1) / total_iters * 100:.2f}%)'
