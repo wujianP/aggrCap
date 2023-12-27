@@ -8,6 +8,8 @@ python3 -m fastchat.serve.huggingface_api --model lmsys/fastchat-t5-3b-v1.0
 import argparse
 
 import torch
+import os
+import time
 
 from fastchat.model import load_model, get_conversation_template, add_model_args
 from dataset import CaptionDataset
@@ -16,8 +18,7 @@ from torch.utils.data import DataLoader
 
 @torch.inference_mode()
 def main(args):
-    from IPython import embed
-    embed()
+    os.makedirs(args.output, exist_ok=True)
 
     # load dataset
     data_set = CaptionDataset(caption_path=args.caption_path)
@@ -39,34 +40,59 @@ def main(args):
         debug=args.debug,
     )
 
+    # Inference
+    total_iters = len(data_loader)
+    for cur_iter, (filenames, prompts, captions, actions) in enumerate(data_loader):
+        start_time = time.time()
+
+        inputs = tokenizer(prompts, padding=True, truncation=True, return_tensors="pt").to(args.device)
+
+        output_ids = model.generate(
+            **inputs,
+            do_sample=True if args.temperature > 1e-5 else False,
+            temperature=args.temperature,
+            repetition_penalty=args.repetition_penalty,
+            max_new_tokens=args.max_new_tokens,
+        )
+
+        if model.config.is_encoder_decoder:
+            output_ids = output_ids
+        else:
+            output_ids_new = [output_ids[i][len(inputs["input_ids"][i]):] for i in range(len(output_ids))]
+        outputs = tokenizer.batch_decode(
+            output_ids_new, skip_special_tokens=True, spaces_between_special_tokens=False
+        )
+        from IPython import embed
+        embed()
+
     # Build the prompt with a conversation template
-    msg = args.message
-    conv = get_conversation_template(args.model_path)
-    conv.append_message(conv.roles[0], msg)
-    conv.append_message(conv.roles[1], None)
-    prompt = conv.get_prompt()
+    # msg = args.message
+    # conv = get_conversation_template(args.model_path)
+    # conv.append_message(conv.roles[0], msg)
+    # conv.append_message(conv.roles[1], None)
+    # prompt = conv.get_prompt()
 
     # Run inference
-    inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
-    output_ids = model.generate(
-        **inputs,
-        do_sample=True if args.temperature > 1e-5 else False,
-        temperature=args.temperature,
-        repetition_penalty=args.repetition_penalty,
-        max_new_tokens=args.max_new_tokens,
-    )
-
-    if model.config.is_encoder_decoder:
-        output_ids = output_ids[0]
-    else:
-        output_ids = output_ids[0][len(inputs["input_ids"][0]) :]
-    outputs = tokenizer.decode(
-        output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
-    )
-
-    # Print results
-    print(f"{conv.roles[0]}: {msg}")
-    print(f"{conv.roles[1]}: {outputs}")
+    # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
+    # output_ids = model.generate(
+    #     **inputs,
+    #     do_sample=True if args.temperature > 1e-5 else False,
+    #     temperature=args.temperature,
+    #     repetition_penalty=args.repetition_penalty,
+    #     max_new_tokens=args.max_new_tokens,
+    # )
+    #
+    # if model.config.is_encoder_decoder:
+    #     output_ids = output_ids[0]
+    # else:
+    #     output_ids = output_ids[0][len(inputs["input_ids"][0]) :]
+    # outputs = tokenizer.decode(
+    #     output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
+    # )
+    #
+    # # Print results
+    # print(f"{conv.roles[0]}: {msg}")
+    # print(f"{conv.roles[1]}: {outputs}")
 
 
 if __name__ == "__main__":
