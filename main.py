@@ -107,7 +107,7 @@ if __name__ == "__main__":
     # output
     parser.add_argument("--output", type=str, help="the path to the output dir")
     parser.add_argument("--save-freq", type=int, default=100)
-    parser.add_argument("--save-freq", type=int, default=1)
+    parser.add_argument("--print-freq", type=int, default=1)
     args = parser.parse_args()
 
     # Reset default repetition penalty for T5 models.
