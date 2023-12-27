@@ -11,9 +11,17 @@ import torch
 import os
 import time
 
-from fastchat.model import load_model, get_conversation_template, add_model_args
+from fastchat.model import load_model, add_model_args
 from dataset import CaptionDataset
 from torch.utils.data import DataLoader
+
+
+def seconds_to_hms(t):
+    hours = int(t // 3600)
+    minutes = int((t % 3600) // 60)
+    seconds = int(t % 60)
+
+    return f'{hours:02d} h, {minutes:02d} m, {seconds:02d} s'
 
 
 @torch.inference_mode()
@@ -46,8 +54,8 @@ def main(args):
         start_time = time.time()
 
         new_prompts = [
-            f"Input: These are captions of the frames in temporal order within the same video: {pt}. please summarize the whole video according to the frame captions in short. Always answer in one sentence. Output: This video shows"
-            for pt in prompts
+            f"Input: These are captions of the frames in temporal order within the same video: {cp}. please summarize the whole video according to the frame captions in short. Always answer in one sentence. Output: This video shows"
+            for cp in captions
         ]
 
         inputs = tokenizer(new_prompts, padding=True, truncation=True, return_tensors="pt").to(args.device)
@@ -68,42 +76,24 @@ def main(args):
             output_ids_new, skip_special_tokens=True, spaces_between_special_tokens=False
         )
         outputs = [op.strip() for op in outputs]
-        print(outputs)
-        from IPython import embed
-        embed()
 
-    # Build the prompt with a conversation template
-    # msg = args.message
-    # conv = get_conversation_template(args.model_path)
-    # conv.append_message(conv.roles[0], msg)
-    # conv.append_message(conv.roles[1], None)
-    # prompt = conv.get_prompt()
-
-    # Run inference
-    # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
-    # output_ids = model.generate(
-    #     **inputs,
-    #     do_sample=True if args.temperature > 1e-5 else False,
-    #     temperature=args.temperature,
-    #     repetition_penalty=args.repetition_penalty,
-    #     max_new_tokens=args.max_new_tokens,
-    # )
-    #
-    # if model.config.is_encoder_decoder:
-    #     output_ids = output_ids[0]
-    # else:
-    #     output_ids = output_ids[0][len(inputs["input_ids"][0]) :]
-    # outputs = tokenizer.decode(
-    #     output_ids, skip_special_tokens=True, spaces_between_special_tokens=False
-    # )
-    #
-    # # Print results
-    # print(f"{conv.roles[0]}: {msg}")
-    # print(f"{conv.roles[1]}: {outputs}")
+        if (cur_iter + 1) % args.print_freq == 0:
+            batch_time = time.time() - start_time
+            time_to_end = batch_time * (total_iters - cur_iter - 1)
+            print(
+                f'prompt: {new_prompts}\n'
+                f'outputs: {outputs}'
+            )
+            print(
+                f'Job: [{args.job_id} / {args.job_num}] Iter: {cur_iter + 1} / {total_iters} ({(cur_iter + 1) / total_iters * 100:.2f}%)'
+                f' Batch Time: {batch_time:.2f} TTE: {seconds_to_hms(time_to_end)}')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    # job
+    parser.add_argument("--job-id", type=int, default=0)
+    parser.add_argument("--job-num", type=int, default=1)
     # model
     add_model_args(parser)
     parser.add_argument("--temperature", type=float, default=0.7)
@@ -117,6 +107,7 @@ if __name__ == "__main__":
     # output
     parser.add_argument("--output", type=str, help="the path to the output dir")
     parser.add_argument("--save-freq", type=int, default=100)
+    parser.add_argument("--save-freq", type=int, default=1)
     args = parser.parse_args()
 
     # Reset default repetition penalty for T5 models.
