@@ -37,7 +37,7 @@ def main(args):
         load_8bit=args.load_8bit,
         cpu_offloading=args.cpu_offloading,
         revision=args.revision,
-        debug=args.debug,
+        debug=args.debug
     )
 
     # Inference
@@ -45,7 +45,12 @@ def main(args):
     for cur_iter, (filenames, prompts, captions, actions) in enumerate(data_loader):
         start_time = time.time()
 
-        inputs = tokenizer(prompts, padding=True, truncation=True, return_tensors="pt").to(args.device)
+        new_prompts = [
+            f"Always answer in one sentence. {pt}"
+            for pt in prompts
+        ]
+
+        inputs = tokenizer(new_prompts, padding=True, truncation=True, return_tensors="pt").to(args.device)
 
         output_ids = model.generate(
             **inputs,
@@ -56,7 +61,7 @@ def main(args):
         )
 
         if model.config.is_encoder_decoder:
-            output_ids = output_ids
+            output_ids_new = output_ids
         else:
             output_ids_new = [output_ids[i][len(inputs["input_ids"][i]):] for i in range(len(output_ids))]
         outputs = tokenizer.batch_decode(
@@ -66,11 +71,11 @@ def main(args):
         embed()
 
     # Build the prompt with a conversation template
-    # msg = args.message
-    # conv = get_conversation_template(args.model_path)
-    # conv.append_message(conv.roles[0], msg)
-    # conv.append_message(conv.roles[1], None)
-    # prompt = conv.get_prompt()
+    msg = args.message
+    conv = get_conversation_template(args.model_path)
+    conv.append_message(conv.roles[0], msg)
+    conv.append_message(conv.roles[1], None)
+    prompt = conv.get_prompt()
 
     # Run inference
     # inputs = tokenizer([prompt], return_tensors="pt").to(args.device)
