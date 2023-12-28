@@ -78,7 +78,7 @@ def main(args):
         start_time = time.time()
 
         new_prompts = [
-            f"Suppose you can only speak English. Input: These are captions of the frames in temporal order within the same video: {cp}. please summarize the whole video according to the frame captions in short. Always answer in one short sentence. Output: This video shows"
+            f"In this task you can only response in English. Input: These are captions of the frames in temporal order within the same video: {cp}. please summarize the whole video according to the frame captions in short. Always answer in one short sentence. Output: This video shows"
             for cp in captions
         ]
 
