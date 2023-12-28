@@ -9,6 +9,8 @@ import argparse
 
 import torch
 import os
+import json
+import shutil
 import time
 
 from fastchat.model import load_model, add_model_args
@@ -27,6 +29,14 @@ def seconds_to_hms(t):
 @torch.inference_mode()
 def main(args):
     os.makedirs(args.output, exist_ok=True)
+
+    # save config and code
+    config_dict = vars(args)
+    with open(os.path.join(args.output, 'args.json'), 'w') as f:
+        json.dump(config_dict, f, indent=4)
+    f.close()
+    code = os.path.abspath(__file__)
+    shutil.copy(code, os.path.join(args.output, 'code.py'))
 
     # load dataset
     data_set = CaptionDataset(caption_path=args.caption_path)
@@ -68,7 +78,7 @@ def main(args):
         start_time = time.time()
 
         new_prompts = [
-            f"Input: These are captions of the frames in temporal order within the same video: {cp}. please summarize the whole video according to the frame captions in short. Always answer in one sentence. Output: This video shows"
+            f"Input: These are captions of the frames in temporal order within the same video: {cp}. please summarize the whole video according to the frame captions in short. Always answer in one sentence. Always answer in English. Output: This video shows"
             for cp in captions
         ]
 
