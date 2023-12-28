@@ -11,4 +11,4 @@ python main.py \
 --model='Qwen/Qwen-7B-Chat' \
 --output='outputs/qwen-7b-chat' \
 --save-freq=10 \
---print-freq=5
+--print-freq=1
