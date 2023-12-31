@@ -8,7 +8,7 @@ python main.py \
 --job-id=$JOB_ID \
 --batch-size=8 \
 --caption-path='/DDN_ROOT/jia/code/Open-VCLIP-V2/video_description_gen/flan_xxl_record_uniform.pth' \
---model='bofenghuang/vigogne-2-7b-chat' \
---output='outputs/vigogne-7b-chat' \
+--model='lmsys/vicuna-7b-v1.5' \
+--output='outputs/vicuna-7b-v1.5' \
 --save-freq=10 \
 --print-freq=1

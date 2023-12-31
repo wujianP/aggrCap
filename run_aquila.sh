@@ -1,4 +1,4 @@
-JOB_ID=0
+JOB_ID=7
 cd /discobox/wjpeng/code/202312/aggrCap
 conda activate /discobox/wjpeng/env/clip/
 export CUDA_VISIBLE_DEVICES=$((JOB_ID % 8))
